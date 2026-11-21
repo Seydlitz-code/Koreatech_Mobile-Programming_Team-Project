@@ -5,6 +5,7 @@ version: 0.1.0
 
 environment:
   sdk: ^3.10.0
+  flutter: 3.50.1
 
 dependencies:
   flutter:
@@ -16,6 +17,7 @@ dependencies:
   path: ^1.9.0
   file_picker: ^8.0.0        # PDF 파일 선택
   crypto: ^3.0.3             # 파일 해시(중복 등록 방지)
+  material_ui: ^1.11.1
 
 dev_dependencies:
   flutter_test:

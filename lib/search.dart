@@ -40,13 +40,15 @@ class SearchEngine {
     // 1) 후보 수집: 토큰 중 하나라도 포함한 청크
     final candidates = <int, Map<String, Object?>>{};
     for (final t in tokens) {
-      final escaped =
-          t.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
+      final escaped = t
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_');
       final rows = _appDb.db.select(
         'SELECT id, doc_id, page_no, text, compact FROM chunk '
         "WHERE compact LIKE ? ESCAPE '\\'"
         '${docId != null ? ' AND doc_id = ?' : ''}',
-        ['%$escaped%', if (docId != null) docId],
+        ['%$escaped%', ?docId],
       );
       for (final r in rows) {
         candidates[r['id'] as int] = Map<String, Object?>.from(r);
@@ -114,8 +116,12 @@ class SearchEngine {
   }
 
   /// 원문에서 첫 매칭 위치 주변을 잘라 미리보기로 만든다.
-  static String makeSnippet(String text, List<String> tokens,
-      {int before = 30, int after = 90}) {
+  static String makeSnippet(
+    String text,
+    List<String> tokens, {
+    int before = 30,
+    int after = 90,
+  }) {
     final lower = text.toLowerCase();
     var pos = -1;
     for (final t in tokens) {

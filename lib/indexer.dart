@@ -23,8 +23,9 @@ class PdfIndexer {
     final hash = (await sha1.bind(File(path).openRead()).first).toString();
 
     // 같은 파일이면 새로 만들지 않고 이어서 처리
-    final existing =
-        db.select('SELECT id FROM document WHERE file_hash = ?', [hash]);
+    final existing = db.select('SELECT id FROM document WHERE file_hash = ?', [
+      hash,
+    ]);
     final int docId;
     if (existing.isNotEmpty) {
       docId = existing.first['id'] as int;
@@ -39,15 +40,20 @@ class PdfIndexer {
     final doc = await PdfDocument.openFile(path);
     try {
       final total = doc.pages.length;
-      db.execute('UPDATE document SET page_count = ? WHERE id = ?',
-          [total, docId]);
+      db.execute('UPDATE document SET page_count = ? WHERE id = ?', [
+        total,
+        docId,
+      ]);
 
-      final start = db.select(
-          'SELECT indexed_pages AS n FROM document WHERE id = ?',
-          [docId]).first['n'] as int;
+      final start =
+          db.select('SELECT indexed_pages AS n FROM document WHERE id = ?', [
+                docId,
+              ]).first['n']
+              as int;
 
       final insert = db.prepare(
-          'INSERT INTO chunk (doc_id, page_no, text, compact) VALUES (?, ?, ?, ?)');
+        'INSERT INTO chunk (doc_id, page_no, text, compact) VALUES (?, ?, ?, ?)',
+      );
       try {
         for (var pageNo = start + 1; pageNo <= total; pageNo++) {
           final page = doc.pages[pageNo - 1];
@@ -59,8 +65,10 @@ class PdfIndexer {
             for (final c in chunkText(raw)) {
               insert.execute([docId, pageNo, c, AppDb.compact(c)]);
             }
-            db.execute('UPDATE document SET indexed_pages = ? WHERE id = ?',
-                [pageNo, docId]);
+            db.execute('UPDATE document SET indexed_pages = ? WHERE id = ?', [
+              pageNo,
+              docId,
+            ]);
             db.execute('COMMIT');
           } catch (_) {
             db.execute('ROLLBACK');
@@ -86,8 +94,11 @@ class PdfIndexer {
 
   /// 페이지 텍스트를 [chunkSize]글자 창으로 자른다.
   /// 테스트하기 쉽도록 순수 함수로 분리.
-  static List<String> chunkText(String raw,
-      {int size = chunkSize, int overlap = chunkOverlap}) {
+  static List<String> chunkText(
+    String raw, {
+    int size = chunkSize,
+    int overlap = chunkOverlap,
+  }) {
     final text = raw
         .replaceAll('\r', '')
         .replaceAll(RegExp(r'[ \t\u00A0]+'), ' ')

@@ -10,7 +10,14 @@ class AppDb {
 
   static Future<AppDb> open() async {
     final dir = await getApplicationDocumentsDirectory();
-    final db = sqlite3.open(p.join(dir.path, 'pdf_search.db'));
+    return AppDb.forDatabase(sqlite3.open(p.join(dir.path, 'pdf_search.db')));
+  }
+
+  /// 메모리 DB. 테스트용.
+  factory AppDb.inMemory() => AppDb.forDatabase(sqlite3.openInMemory());
+
+  /// 이미 열린 [db]에 스키마를 만들고 감싼다.
+  factory AppDb.forDatabase(Database db) {
     db.execute('''
       CREATE TABLE IF NOT EXISTS document (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,

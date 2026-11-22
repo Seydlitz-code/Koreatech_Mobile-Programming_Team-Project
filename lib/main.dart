@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:pdfrx/pdfrx.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // pdfrx 3.x: 위젯보다 먼저 PdfDocument API(인덱서)를 쓰므로 미리 초기화한다.
+  await pdfrxFlutterInitialize();
   runApp(const MyApp());
 }
 

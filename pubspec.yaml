@@ -4,22 +4,25 @@ publish_to: none
 version: 0.1.0
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ^3.10.0
+  flutter: 3.50.1
 
 dependencies:
   flutter:
     sdk: flutter
-  pdfrx: ^1.0.0              # PDFium 기반 뷰어 + 텍스트/글자 좌표 추출
+  pdfrx: ^3.0.0              # PDFium 기반 뷰어 + 텍스트/글자 좌표 추출
   sqlite3: ^2.4.0            # 최신 SQLite 번들
   sqlite3_flutter_libs: ^0.5.0
   path_provider: ^2.1.0
   path: ^1.9.0
-  file_picker: ^8.0.0        # PDF 파일 선택
+  file_picker: ^13.4.1       # PDF 파일 선택
   crypto: ^3.0.3             # 파일 해시(중복 등록 방지)
+  material_ui: ^1.11.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true

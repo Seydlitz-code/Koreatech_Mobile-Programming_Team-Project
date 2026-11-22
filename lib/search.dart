@@ -40,13 +40,15 @@ class SearchEngine {
     // 1) 후보 수집: 토큰 중 하나라도 포함한 청크
     final candidates = <int, Map<String, Object?>>{};
     for (final t in tokens) {
-      final escaped =
-          t.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
+      final escaped = t
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_');
       final rows = _appDb.db.select(
         'SELECT id, doc_id, page_no, text, compact FROM chunk '
         "WHERE compact LIKE ? ESCAPE '\\'"
         '${docId != null ? ' AND doc_id = ?' : ''}',
-        ['%$escaped%', if (docId != null) docId],
+        ['%$escaped%', ?docId],
       );
       for (final r in rows) {
         candidates[r['id'] as int] = Map<String, Object?>.from(r);
@@ -114,18 +116,45 @@ class SearchEngine {
   }
 
   /// 원문에서 첫 매칭 위치 주변을 잘라 미리보기로 만든다.
-  static String makeSnippet(String text, List<String> tokens,
-      {int before = 30, int after = 90}) {
-    final lower = text.toLowerCase();
+  /// (tokens: 공백 제거된 소문자 토큰)
+  static String makeSnippet(
+    String text,
+    List<String> tokens, {
+    int before = 30,
+    int after = 90,
+  }) {
+    final (:compact, :origin) = compactWithOrigin(text);
     var pos = -1;
     for (final t in tokens) {
-      final i = lower.indexOf(t);
-      if (i >= 0 && (pos < 0 || i < pos)) pos = i;
+      final i = compact.indexOf(t);
+      if (i >= 0 && (pos < 0 || origin[i] < pos)) pos = origin[i];
     }
-    if (pos < 0) pos = 0; // 원문 띄어쓰기 때문에 못 찾으면 청크 앞부분
+    if (pos < 0) pos = 0; // 못 찾으면 청크 앞부분
     final s = math.max(0, pos - before);
     final e = math.min(text.length, pos + after);
     return '${s > 0 ? '…' : ''}${text.substring(s, e)}${e < text.length ? '…' : ''}';
+  }
+
+  static final _whitespace = RegExp(r'\s');
+
+  /// [AppDb.compact]와 같은 문자열(공백 제거 + 소문자)을 만들면서,
+  /// 그 문자열의 각 글자가 원문 [text]의 몇 번째 글자에서 왔는지도 함께 돌려준다.
+  /// compact 기준으로 찾은 위치를 원문 위치로 되돌릴 때 쓴다
+  /// (하이라이트에도 같은 표를 쓰면 된다).
+  static ({String compact, List<int> origin}) compactWithOrigin(String text) {
+    final buf = StringBuffer();
+    final origin = <int>[];
+    for (var i = 0; i < text.length; i++) {
+      final ch = text[i];
+      if (_whitespace.hasMatch(ch)) continue;
+      // 'İ'처럼 소문자로 바꾸면 길이가 늘어나는 글자가 있으므로 글자마다 바꾼다.
+      final lower = ch.toLowerCase();
+      buf.write(lower);
+      for (var k = 0; k < lower.length; k++) {
+        origin.add(i);
+      }
+    }
+    return (compact: buf.toString(), origin: origin);
   }
 
   static Iterable<List<String>> _permutations(List<String> items) sync* {

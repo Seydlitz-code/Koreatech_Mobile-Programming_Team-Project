@@ -30,3 +30,17 @@ PDF를 등록하고 자연어로 검색하면 해당 페이지를 찾아주는 A
 | `path_provider`, `path` | 저장 경로 처리 |
 | `file_picker` | PDF 파일 선택 |
 | `crypto` | 파일 해시 (중복 등록 방지) |
+
+## 개발 규칙
+
+- Flutter 버전은 **3.50.1**로 고정합니다(`pubspec.yaml`의 `environment.flutter`, CI도 이 값을 씁니다). 버전이 다르면 `flutter upgrade`로 맞추세요.
+- `main`에는 직접 푸시할 수 없습니다. 브랜치를 만들어 PR을 올리고, CI가 통과하면 머지합니다(리뷰 승인은 필수가 아니지만 가능하면 서로 확인해 주세요).
+- PR마다 GitHub Actions CI(`.github/workflows/ci.yml`)가 돌고, `Analyze & Test`(포맷·analyze·테스트)와 `Build Android`(디버그 APK 빌드)가 모두 통과해야 머지할 수 있습니다.
+- 푸시 전에 로컬에서 CI와 같은 검사를 돌려 보세요.
+
+```
+flutter pub get
+dart format lib test
+flutter analyze
+flutter test
+```

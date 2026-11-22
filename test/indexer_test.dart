@@ -37,5 +37,21 @@ void main() {
         text.substring(700, 1000),
       ]);
     });
+
+    test('overlap이 size 이상이면 무한 루프 대신 ArgumentError를 던진다', () {
+      final text = 'a' * 200;
+      expect(
+        () => PdfIndexer.chunkText(text, size: 50, overlap: 50),
+        throwsArgumentError,
+      );
+      expect(
+        () => PdfIndexer.chunkText(text, size: 0, overlap: 0),
+        throwsArgumentError,
+      );
+      expect(
+        () => PdfIndexer.chunkText(text, size: 50, overlap: -1),
+        throwsArgumentError,
+      );
+    });
   });
 }

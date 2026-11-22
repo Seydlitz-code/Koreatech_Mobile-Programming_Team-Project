@@ -21,21 +21,7 @@ class PdfIndexer {
   Future<int> register(String path, {ProgressCallback? onProgress}) async {
     final db = _appDb.db;
     final hash = (await sha1.bind(File(path).openRead()).first).toString();
-
-    // 같은 파일이면 새로 만들지 않고 이어서 처리
-    final existing = db.select('SELECT id FROM document WHERE file_hash = ?', [
-      hash,
-    ]);
-    final int docId;
-    if (existing.isNotEmpty) {
-      docId = existing.first['id'] as int;
-    } else {
-      db.execute(
-        'INSERT INTO document (title, file_path, file_hash) VALUES (?, ?, ?)',
-        [p.basenameWithoutExtension(path), path, hash],
-      );
-      docId = db.lastInsertRowId;
-    }
+    final docId = upsertDocument(path, hash);
 
     final doc = await PdfDocument.openFile(path);
     try {
@@ -88,6 +74,28 @@ class PdfIndexer {
     return docId;
   }
 
+  /// 해시가 같은 문서가 있으면 그 id를, 없으면 새로 만들어 id를 반환한다.
+  /// 같은 파일을 다른 위치에서 다시 등록하면 경로를 새 위치로 갱신한다.
+  int upsertDocument(String path, String hash) {
+    final db = _appDb.db;
+    final existing = db.select('SELECT id FROM document WHERE file_hash = ?', [
+      hash,
+    ]);
+    if (existing.isNotEmpty) {
+      final docId = existing.first['id'] as int;
+      db.execute('UPDATE document SET file_path = ? WHERE id = ?', [
+        path,
+        docId,
+      ]);
+      return docId;
+    }
+    db.execute(
+      'INSERT INTO document (title, file_path, file_hash) VALUES (?, ?, ?)',
+      [p.basenameWithoutExtension(path), path, hash],
+    );
+    return db.lastInsertRowId;
+  }
+
   /// 문서 삭제 (chunk는 ON DELETE CASCADE)
   void remove(int docId) =>
       _appDb.db.execute('DELETE FROM document WHERE id = ?', [docId]);
@@ -99,6 +107,12 @@ class PdfIndexer {
     int size = chunkSize,
     int overlap = chunkOverlap,
   }) {
+    if (size <= 0 || overlap < 0 || overlap >= size) {
+      throw ArgumentError(
+        'size는 1 이상, overlap은 0 이상 size 미만이어야 합니다 '
+        '(size: $size, overlap: $overlap).',
+      );
+    }
     final text = raw
         .replaceAll('\r', '')
         .replaceAll(RegExp(r'[ \t\u00A0]+'), ' ')

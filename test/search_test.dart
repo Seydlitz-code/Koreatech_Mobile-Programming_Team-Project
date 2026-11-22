@@ -49,5 +49,28 @@ void main() {
       final text = 'a' * 200;
       expect(SearchEngine.makeSnippet(text, ['zzz']), '${'a' * 90}…');
     });
+
+    test('원문에 띄어쓰기가 있어도 일치한 위치를 찾는다', () {
+      final text = '${'y' * 100}융합 계열${'z' * 100}';
+      expect(
+        SearchEngine.makeSnippet(text, ['융합계열']),
+        '…${text.substring(70, 190)}…',
+      );
+    });
+
+    test('소문자로 바꾸면 길어지는 글자가 있어도 원문 위치로 자른다', () {
+      // 'İ'(U+0130)는 소문자로 바꾸면 2글자가 될 수 있다.
+      final text = '${'İ' * 150}target${'z' * 10}';
+      final snippet = SearchEngine.makeSnippet(text, ['target']);
+      expect(snippet, '…${text.substring(120)}');
+    });
+  });
+
+  group('SearchEngine.compactWithOrigin', () {
+    test('AppDb.compact와 같은 문자열과 원문 위치를 돌려준다', () {
+      final r = SearchEngine.compactWithOrigin(' 융합 계열 AB');
+      expect(r.compact, '융합계열ab');
+      expect(r.origin, [1, 2, 4, 5, 7, 8]);
+    });
   });
 }

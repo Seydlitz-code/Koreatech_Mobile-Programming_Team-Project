@@ -135,6 +135,48 @@ class SearchEngine {
     return '${s > 0 ? '…' : ''}${text.substring(s, e)}${e < text.length ? '…' : ''}';
   }
 
+  /// [text]에서 [terms](공백 제거된 소문자 토큰)가 나타나는 원문 구간을
+  /// 겹치지 않게 합쳐 시작 순으로 돌려준다. 끝은 포함하지 않는다.
+  /// 원문에 띄어쓰기가 끼어 있어도 찾는다("융합 계열" ← "융합계열").
+  static List<(int start, int end)> matchRanges(
+    String text,
+    List<String> terms,
+  ) {
+    final (:compact, :origin) = compactWithOrigin(text);
+    final ranges = <(int, int)>[];
+    for (final t in terms) {
+      if (t.isEmpty) continue;
+      var i = compact.indexOf(t);
+      while (i >= 0) {
+        ranges.add((origin[i], origin[i + t.length - 1] + 1));
+        i = compact.indexOf(t, i + 1);
+      }
+    }
+    ranges.sort((a, b) => a.$1.compareTo(b.$1));
+
+    final merged = <(int, int)>[];
+    for (final r in ranges) {
+      if (merged.isNotEmpty && r.$1 <= merged.last.$2) {
+        final last = merged.removeLast();
+        merged.add((last.$1, math.max(last.$2, r.$2)));
+      } else {
+        merged.add(r);
+      }
+    }
+    return merged;
+  }
+
+  /// 토큰 글자 사이에 공백·줄바꿈이 끼어 있어도 맞는 정규식(대소문자 무시).
+  /// PDF 뷰어에서 페이지 위 강조에 쓴다. 예: "융합계열" → 융\s*합\s*계\s*열
+  static RegExp? spacingTolerantPattern(List<String> terms) {
+    final parts = [
+      for (final t in terms)
+        if (t.isNotEmpty) t.split('').map(RegExp.escape).join(r'\s*'),
+    ];
+    if (parts.isEmpty) return null;
+    return RegExp(parts.join('|'), caseSensitive: false);
+  }
+
   static final _whitespace = RegExp(r'\s');
 
   /// [AppDb.compact]와 같은 문자열(공백 제거 + 소문자)을 만들면서,

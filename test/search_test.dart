@@ -73,4 +73,50 @@ void main() {
       expect(r.origin, [1, 2, 4, 5, 7, 8]);
     });
   });
+
+  group('SearchEngine.matchRanges', () {
+    test('원문 띄어쓰기를 건너뛰어 강조 구간을 찾는다', () {
+      // '공학 융합 계열' → 공학 [0,2), 융합 계열 [3,8)
+      expect(SearchEngine.matchRanges('공학 융합 계열', ['공학', '융합계열']), [
+        (0, 2),
+        (3, 8),
+      ]);
+    });
+
+    test('같은 토큰이 여러 번 나오면 모두 찾는다', () {
+      expect(SearchEngine.matchRanges('AB ab Ab', ['ab']), [
+        (0, 2),
+        (3, 5),
+        (6, 8),
+      ]);
+    });
+
+    test('겹치거나 맞닿는 구간은 하나로 합친다', () {
+      expect(SearchEngine.matchRanges('공학융합', ['공학융', '융합']), [(0, 4)]);
+    });
+
+    test('일치하지 않거나 빈 토큰은 무시한다', () {
+      expect(SearchEngine.matchRanges('공학', ['없음', '']), isEmpty);
+    });
+  });
+
+  group('SearchEngine.spacingTolerantPattern', () {
+    test('글자 사이 공백·줄바꿈을 허용한다', () {
+      final re = SearchEngine.spacingTolerantPattern(['융합계열'])!;
+      expect(re.hasMatch('융합 계열'), isTrue);
+      expect(re.hasMatch('융합\n계열'), isTrue);
+      expect(re.hasMatch('융합과 계열'), isFalse);
+    });
+
+    test('여러 토큰 중 하나만 맞아도 찾고, 정규식 특수문자는 글자로 본다', () {
+      final re = SearchEngine.spacingTolerantPattern(['a.b', 'XY'])!;
+      expect(re.hasMatch('a . b'), isTrue);
+      expect(re.hasMatch('axb'), isFalse);
+      expect(re.hasMatch('x y'), isTrue);
+    });
+
+    test('토큰이 없으면 null이다', () {
+      expect(SearchEngine.spacingTolerantPattern(['']), isNull);
+    });
+  });
 }

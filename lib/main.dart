@@ -8,7 +8,7 @@ import 'package:pdfrx/pdfrx.dart';
 import 'db.dart';
 import 'library.dart';
 import 'search.dart';
-import 'ui/home_page.dart';
+import 'ui/app_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,13 +33,13 @@ class PdfSearchApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF3E5E86);
+    const seed = Color(0xFF426B9C);
     return MaterialApp(
       title: 'PDF 검색 도우미',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorSchemeSeed: seed),
       darkTheme: ThemeData(colorSchemeSeed: seed, brightness: Brightness.dark),
-      home: HomePage(library: library, engine: engine),
+      home: AppShell(library: library, engine: engine),
     );
   }
 }
